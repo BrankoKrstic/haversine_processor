@@ -1,11 +1,11 @@
 use std::{
     fs::File,
-    io::{self, BufWriter},
+    io::{self, BufReader, BufWriter},
     path::PathBuf,
 };
 
 use clap::{Parser, Subcommand};
-use haversine_calculator::generate::CoordSerializer;
+use haversine_calculator::{calc::naive_haversine, generate::CoordSerializer, CoordPair};
 use rand::{rngs::StdRng, SeedableRng};
 
 #[derive(Parser)]
@@ -28,7 +28,7 @@ enum Commands {
         #[arg(short, long, default_value_t = false)]
         uniform: bool,
     },
-    Run {},
+    Calculate {},
 }
 
 fn main() -> Result<(), io::Error> {
@@ -46,7 +46,23 @@ fn main() -> Result<(), io::Error> {
             let writer = BufWriter::new(file);
             serde_json::to_writer(writer, &serializer).unwrap();
         }
-        Commands::Run {} => todo!(),
+        Commands::Calculate {} => {
+            let reader = BufReader::new(File::open(path)?);
+            let res: Vec<CoordPair> = serde_json::from_reader(reader).unwrap();
+            let mut running_sum = 0.0;
+            let mut count_nums = 0;
+            for cp in res {
+                let res = naive_haversine(cp);
+                println!("{}", res);
+                running_sum += res;
+                count_nums += 1;
+            }
+            println!(
+                "The avg is: {} {}",
+                running_sum,
+                running_sum / count_nums as f64
+            );
+        }
     }
     Ok(())
 }

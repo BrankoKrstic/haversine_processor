@@ -1,8 +1,10 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
+pub mod calc;
 pub mod generate;
-#[derive(Debug, Serialize)]
-struct CoordPair {
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CoordPair {
     lat0: f64,
     lng0: f64,
     lat1: f64,
