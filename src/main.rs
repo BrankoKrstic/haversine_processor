@@ -49,19 +49,15 @@ fn main() -> Result<(), io::Error> {
         Commands::Calculate {} => {
             let reader = BufReader::new(File::open(path)?);
             let res: Vec<CoordPair> = serde_json::from_reader(reader).unwrap();
+            println!("Finished parsing json");
             let mut running_sum = 0.0;
             let mut count_nums = 0;
             for cp in res {
                 let res = naive_haversine(cp);
-                println!("{}", res);
                 running_sum += res;
                 count_nums += 1;
             }
-            println!(
-                "The avg is: {} {}",
-                running_sum,
-                running_sum / count_nums as f64
-            );
+            println!("The avg is: {}", running_sum / count_nums as f64);
         }
     }
     Ok(())
