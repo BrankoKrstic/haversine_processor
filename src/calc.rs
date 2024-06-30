@@ -10,6 +10,5 @@ pub fn naive_haversine(cp: CoordPair) -> f64 {
 
     let a = (d_lat / 2.0).sin().powf(2.0) + lat0.cos() * lat1.cos() * (d_lon / 2.0).sin().powf(2.0);
     let c = 2.0 * a.sqrt().asin();
-
     EARTH_RADIUS * c
 }

@@ -6,6 +6,7 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use haversine_calculator::{
+    bench_block,
     calc::naive_haversine,
     generate::CoordPairGen,
     metrics::Bench,
@@ -47,6 +48,7 @@ fn main() -> Result<(), io::Error> {
             seed,
             uniform,
         } => {
+            bench_block!("Generate Haversine Input");
             let rng = StdRng::seed_from_u64(seed);
             let mut coord_pair_generator = CoordPairGen::new(rng, !uniform, count);
             let file = File::create(path)?;

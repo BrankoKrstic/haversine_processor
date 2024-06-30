@@ -6,7 +6,7 @@ use std::{
 
 use rand::RngCore;
 
-use crate::{generate::CoordPairGen, CoordPair};
+use crate::{bench_block, generate::CoordPairGen, CoordPair};
 
 /// Pretty much serde without the intermediate representation
 
@@ -44,6 +44,7 @@ pub fn serialize<S: Serializable>(
     obj: &mut S,
     writer: &mut impl Write,
 ) -> Result<(), std::io::Error> {
+    bench_block!("Serialize Input to Json");
     obj.streaming_serialize(writer)
 }
 
