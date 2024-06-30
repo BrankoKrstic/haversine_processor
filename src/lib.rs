@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod calc;
 pub mod generate;
+pub mod parser;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CoordPair {
