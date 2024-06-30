@@ -6,7 +6,8 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use haversine_calculator::{
-    calc::naive_haversine, generate::CoordSerializer, parser::deserialize, CoordPair,
+    calc::naive_haversine, generate::CoordSerializer, metrics::Bench, parser::deserialize,
+    CoordPair,
 };
 use rand::{rngs::StdRng, SeedableRng};
 
@@ -34,6 +35,7 @@ enum Commands {
 }
 
 fn main() -> Result<(), io::Error> {
+    let mut benchmark = Bench::<5>::start();
     let cli = Cli::parse();
     let path = PathBuf::from(cli.filename);
     match cli.command {
@@ -50,15 +52,21 @@ fn main() -> Result<(), io::Error> {
         }
         Commands::Calculate {} => {
             let mut reader = BufReader::new(File::open(path)?);
+            benchmark.bench("Startup");
             let res: Vec<CoordPair> = deserialize(&mut reader).unwrap();
-            println!("Finished parsing json");
+            benchmark.bench("Deserialization");
             let mut running_sum = 0.0;
             let len = res.len();
+            benchmark.bench("Misc Setup");
             for cp in res {
                 let res = naive_haversine(cp);
                 running_sum += res;
             }
-            println!("The avg is: {}", running_sum / len as f64);
+            let result = running_sum / len as f64;
+            benchmark.bench("Haversine Calculation");
+            println!("The avg is: {}", result);
+            benchmark.bench("Output");
+            benchmark.end();
         }
     }
     Ok(())
