@@ -1,7 +1,4 @@
-use std::cell::RefCell;
-
 use rand::Rng;
-use serde::{ser::SerializeSeq, Serialize};
 
 use crate::CoordPair;
 
@@ -17,7 +14,7 @@ fn gen_rand_lat_lon(
     (lat, lon)
 }
 
-struct CoordPairGen<T> {
+pub struct CoordPairGen<T> {
     cur_item: usize,
     item_count: usize,
     min_lat: f64,
@@ -29,7 +26,7 @@ struct CoordPairGen<T> {
 }
 
 impl<T: Rng> CoordPairGen<T> {
-    fn new(rng: T, should_cluster: bool, item_count: usize) -> Self {
+    pub fn new(rng: T, should_cluster: bool, item_count: usize) -> Self {
         Self {
             cur_item: 0,
             item_count,
@@ -83,31 +80,5 @@ impl<T: Rng> Iterator for CoordPairGen<T> {
             )
                 .into(),
         )
-    }
-}
-
-pub struct CoordSerializer<T> {
-    inner: RefCell<CoordPairGen<T>>,
-}
-
-impl<T: Rng> CoordSerializer<T> {
-    pub fn new(rng: T, should_cluster: bool, item_count: usize) -> Self {
-        Self {
-            inner: RefCell::new(CoordPairGen::new(rng, should_cluster, item_count)),
-        }
-    }
-}
-
-impl<T: Rng> Serialize for CoordSerializer<T> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut iter = self.inner.borrow_mut();
-        let mut seq = serializer.serialize_seq(Some(iter.item_count - iter.cur_item))?;
-        for item in iter.by_ref() {
-            seq.serialize_element(&item)?;
-        }
-        seq.end()
     }
 }

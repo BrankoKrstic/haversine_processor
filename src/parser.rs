@@ -1,6 +1,12 @@
-use std::{error::Error, fmt::Display, io::BufRead};
+use std::{
+    error::Error,
+    fmt::Display,
+    io::{BufRead, Write},
+};
 
-use crate::CoordPair;
+use rand::RngCore;
+
+use crate::{generate::CoordPairGen, CoordPair};
 
 /// Pretty much serde without the intermediate representation
 
@@ -32,6 +38,13 @@ pub fn deserialize<D: Deserializable>(
     reader: &mut impl BufRead,
 ) -> Result<D, DeserializationError> {
     D::streaming_deserialize(reader)
+}
+
+pub fn serialize<S: Serializable>(
+    obj: &mut S,
+    writer: &mut impl Write,
+) -> Result<(), std::io::Error> {
+    obj.streaming_serialize(writer)
 }
 
 impl<T> Deserializable for Vec<T>
@@ -116,5 +129,38 @@ impl Deserializable for CoordPair {
             lon1: lon1.ok_or_else(|| DeserializationError("member lon1 missing".to_owned()))?,
         };
         Ok(out)
+    }
+}
+
+impl Serializable for CoordPair {
+    fn streaming_serialize(&mut self, writer: &mut impl Write) -> Result<(), std::io::Error> {
+        writer.write_all(
+            format!(
+                "{{\"lat0\":{},\"lon0\":{},\"lat1\":{},\"lon1\":{}}}",
+                self.lat0, self.lon0, self.lat1, self.lon1
+            )
+            .as_bytes(),
+        )
+    }
+}
+
+pub trait Serializable {
+    fn streaming_serialize(&mut self, writer: &mut impl Write) -> Result<(), std::io::Error>;
+}
+
+impl<T: RngCore> Serializable for CoordPairGen<T> {
+    fn streaming_serialize(&mut self, writer: &mut impl Write) -> Result<(), std::io::Error> {
+        writer.write_all(b"[")?;
+
+        if let Some(mut item) = self.next() {
+            item.streaming_serialize(writer)?;
+        }
+        for mut item in self {
+            writer.write_all(b",")?;
+            item.streaming_serialize(writer)?;
+        }
+        writer.write_all(b"]")?;
+
+        Ok(())
     }
 }

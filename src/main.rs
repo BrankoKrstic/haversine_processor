@@ -6,7 +6,10 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use haversine_calculator::{
-    calc::naive_haversine, generate::CoordSerializer, metrics::Bench, parser::deserialize,
+    calc::naive_haversine,
+    generate::CoordPairGen,
+    metrics::Bench,
+    parser::{deserialize, serialize},
     CoordPair,
 };
 use rand::{rngs::StdRng, SeedableRng};
@@ -45,10 +48,10 @@ fn main() -> Result<(), io::Error> {
             uniform,
         } => {
             let rng = StdRng::seed_from_u64(seed);
-            let serializer = CoordSerializer::new(rng, !uniform, count);
+            let mut coord_pair_generator = CoordPairGen::new(rng, !uniform, count);
             let file = File::create(path)?;
-            let writer = BufWriter::new(file);
-            serde_json::to_writer(writer, &serializer).unwrap();
+            let mut writer = BufWriter::new(file);
+            serialize(&mut coord_pair_generator, &mut writer)?;
         }
         Commands::Calculate {} => {
             let mut reader = BufReader::new(File::open(path)?);
