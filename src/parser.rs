@@ -54,8 +54,8 @@ where
             loop {
                 reader.read_exact(&mut next_byte[..])?;
                 match next_byte[0] {
-                    b']' => break 'outer,
                     b',' => break,
+                    b']' => break 'outer,
                     x if x.is_ascii_whitespace() => {}
                     x => {
                         return Err(DeserializationError(format!(
@@ -79,7 +79,13 @@ impl Deserializable for CoordPair {
         let mut lon1: Option<f64> = None;
         let mut buf = vec![];
         reader.read_until(b'}', &mut buf)?;
-        let value = String::from_utf8(buf)
+        if buf[0] != b'{' {
+            return Err(DeserializationError(format!(
+                "Unexpected opening character '{}'",
+                buf[0] as char
+            )));
+        }
+        let value = std::str::from_utf8(&buf[1..buf.len() - 1])
             .map_err(|_| DeserializationError("Only utf8 format supported".to_string()))?;
         for item in value.split(',') {
             let mut key_val = item.split(':');
@@ -98,14 +104,16 @@ impl Deserializable for CoordPair {
                 "\"lon0\"" => lon0 = Some(val),
                 "\"lat1\"" => lat1 = Some(val),
                 "\"lon1\"" => lon1 = Some(val),
-                _ => {}
+                _ => {
+                    println!("{}", key);
+                }
             }
         }
         let out = CoordPair {
-            lat0: lat0.unwrap_or(Err(DeserializationError("member lat0 missing".to_owned()))?),
-            lon0: lon0.unwrap_or(Err(DeserializationError("member lon0 missing".to_owned()))?),
-            lat1: lat1.unwrap_or(Err(DeserializationError("member lat1 missing".to_owned()))?),
-            lon1: lon1.unwrap_or(Err(DeserializationError("member lon1 missing".to_owned()))?),
+            lat0: lat0.ok_or_else(|| DeserializationError("member lat0 missing".to_owned()))?,
+            lon0: lon0.ok_or_else(|| DeserializationError("member lon0 missing".to_owned()))?,
+            lat1: lat1.ok_or_else(|| DeserializationError("member lat1 missing".to_owned()))?,
+            lon1: lon1.ok_or_else(|| DeserializationError("member lon1 missing".to_owned()))?,
         };
         Ok(out)
     }

@@ -5,7 +5,9 @@ use std::{
 };
 
 use clap::{Parser, Subcommand};
-use haversine_calculator::{calc::naive_haversine, generate::CoordSerializer, CoordPair};
+use haversine_calculator::{
+    calc::naive_haversine, generate::CoordSerializer, parser::deserialize, CoordPair,
+};
 use rand::{rngs::StdRng, SeedableRng};
 
 #[derive(Parser)]
@@ -47,8 +49,8 @@ fn main() -> Result<(), io::Error> {
             serde_json::to_writer(writer, &serializer).unwrap();
         }
         Commands::Calculate {} => {
-            let reader = BufReader::new(File::open(path)?);
-            let res: Vec<CoordPair> = serde_json::from_reader(reader).unwrap();
+            let mut reader = BufReader::new(File::open(path)?);
+            let res: Vec<CoordPair> = deserialize(&mut reader).unwrap();
             println!("Finished parsing json");
             let mut running_sum = 0.0;
             let len = res.len();
