@@ -37,6 +37,7 @@ where
 pub fn deserialize<D: Deserializable>(
     reader: &mut impl BufRead,
 ) -> Result<D, DeserializationError> {
+    bench_block!("Deserialize data");
     D::streaming_deserialize(reader)
 }
 
