@@ -113,20 +113,14 @@ impl BenchmarkOnDrop {
 impl Drop for BenchmarkOnDrop {
     fn drop(&mut self) {
         unsafe {
+            let end_time = read_cpu_timer() - self.start;
             BENCHMARK_ANCHOR.depth -= 1;
-            match BENCHMARK_ANCHOR.depth {
-                0 => {
-                    let end_time = read_cpu_timer() - self.start;
-                    BENCHMARK_ANCHOR.data[BENCHMARK_ANCHOR.next].0 = end_time;
-                    BENCHMARK_ANCHOR.data[BENCHMARK_ANCHOR.next].2 = self.name;
-                    BENCHMARK_ANCHOR.next += 1;
-                }
-                1 => {
-                    let end_time = read_cpu_timer() - self.start;
-                    BENCHMARK_ANCHOR.data[BENCHMARK_ANCHOR.next].1 += end_time;
-                }
-                _ => {}
-            }
+            BENCHMARK_ANCHOR.data[BENCHMARK_ANCHOR.next].0 = end_time;
+            BENCHMARK_ANCHOR.data[BENCHMARK_ANCHOR.next].2 = self.name;
+            BENCHMARK_ANCHOR.data[BENCHMARK_ANCHOR.next].1 +=
+                end_time * (BENCHMARK_ANCHOR.depth == 1) as u64;
+
+            BENCHMARK_ANCHOR.next += (BENCHMARK_ANCHOR.depth == 0) as usize;
         }
     }
 }
