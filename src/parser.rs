@@ -6,7 +6,7 @@ use std::{
 
 use rand::RngCore;
 
-use crate::{bench_block, generate::CoordPairGen, metrics::record_bytes_read, CoordPair};
+use crate::{bench_block, generate::CoordPairGen, metrics::record_bytes, CoordPair};
 
 /// Pretty much serde without the intermediate representation
 
@@ -44,7 +44,7 @@ pub fn serialize<S: Serializable>(
     obj: &mut S,
     writer: &mut impl Write,
 ) -> Result<(), std::io::Error> {
-    bench_block!("Serialize Input to Json");
+    bench_block!("Serialize Data to Json");
     obj.streaming_serialize(writer)
 }
 
@@ -57,7 +57,7 @@ where
         bench_block!(handle, "Deserialize Read");
         reader.read_exact(&mut next_byte[..])?;
         drop(handle);
-        record_bytes_read(1);
+        record_bytes(1);
         if next_byte[0] != b'[' {
             return Err(DeserializationError(format!(
                 "Unexpected opening character '{}'",
@@ -71,8 +71,8 @@ where
             loop {
                 bench_block!(handle, "Deserialize Read");
                 reader.read_exact(&mut next_byte[..])?;
+                record_bytes(1);
                 drop(handle);
-                record_bytes_read(1);
 
                 match next_byte[0] {
                     b',' => break,
@@ -101,17 +101,23 @@ impl Deserializable for CoordPair {
         let mut buf = vec![];
         bench_block!(handle, "Deserialize Read");
         let read = reader.read_until(b'}', &mut buf)?;
+        record_bytes(read as u64);
         drop(handle);
-        record_bytes_read(read);
         if buf[0] != b'{' {
             return Err(DeserializationError(format!(
                 "Unexpected opening character '{}'",
                 buf[0] as char
             )));
         }
+        bench_block!(handle, "Process UTF8");
+
         let value = std::str::from_utf8(&buf[1..buf.len() - 1])
             .map_err(|_| DeserializationError("Only utf8 format supported".to_string()))?;
+        drop(handle);
+
         for item in value.split(',') {
+            bench_block!(handle, "Process Key Val Pair");
+
             let mut key_val = item.split(':');
             let key = key_val
                 .next()
@@ -123,6 +129,9 @@ impl Deserializable for CoordPair {
             let val = val.trim().parse::<f64>().map_err(|_| {
                 DeserializationError(format!("Can't parse floating point value from {}", val))
             })?;
+            drop(handle);
+            bench_block!(handle, "Match Key");
+
             match key.trim() {
                 "\"lat0\"" => lat0 = Some(val),
                 "\"lon0\"" => lon0 = Some(val),
@@ -132,6 +141,7 @@ impl Deserializable for CoordPair {
                     println!("{}", key);
                 }
             }
+            drop(handle);
         }
         let out = CoordPair {
             lat0: lat0.ok_or_else(|| DeserializationError("member lat0 missing".to_owned()))?,

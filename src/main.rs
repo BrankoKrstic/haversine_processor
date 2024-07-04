@@ -6,9 +6,10 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use haversine_calculator::{
+    bench_block,
     calc::naive_haversine,
     generate::CoordPairGen,
-    metrics::Benchmark,
+    metrics::{record_bytes, Benchmark},
     parser::{deserialize, serialize},
     CoordPair,
 };
@@ -38,6 +39,7 @@ enum Commands {
 }
 
 fn main() -> Result<(), io::Error> {
+    bench_block!(handle, "Initial Setup");
     let mut _benchmark = Benchmark::init();
     let cli = Cli::parse();
     let path = PathBuf::from(cli.filename);
@@ -51,18 +53,24 @@ fn main() -> Result<(), io::Error> {
             let mut coord_pair_generator = CoordPairGen::new(rng, !uniform, count);
             let file = File::create(path)?;
             let mut writer = BufWriter::new(file);
+            drop(handle);
             serialize(&mut coord_pair_generator, &mut writer)?;
         }
         Commands::Calculate {} => {
             let mut reader = BufReader::new(File::open(path)?);
             let mut running_sum = 0.0;
+            drop(handle);
             let res: Vec<CoordPair> = deserialize(&mut reader).unwrap();
             let len = res.len();
+            bench_block!(process_handle, "Process Haversine");
             for cp in res {
+                record_bytes(std::mem::size_of::<CoordPair>() as u64);
                 let res = naive_haversine(cp);
                 running_sum += res;
             }
             let result = running_sum / len as f64;
+            drop(process_handle);
+            bench_block!("Print Output");
             println!("The avg is: {}", result);
         }
     }
