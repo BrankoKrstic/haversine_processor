@@ -6,7 +6,7 @@ use std::{
 
 use rand::RngCore;
 
-use crate::{bench_block, generate::CoordPairGen, CoordPair};
+use crate::{bench_block, generate::CoordPairGen, metrics::record_bytes_read, CoordPair};
 
 /// Pretty much serde without the intermediate representation
 
@@ -37,7 +37,6 @@ where
 pub fn deserialize<D: Deserializable>(
     reader: &mut impl BufRead,
 ) -> Result<D, DeserializationError> {
-    bench_block!("Deserialize data");
     D::streaming_deserialize(reader)
 }
 
@@ -55,7 +54,10 @@ where
 {
     fn streaming_deserialize(reader: &mut impl BufRead) -> Result<Self, DeserializationError> {
         let mut next_byte = [0u8; 1];
+        bench_block!(handle, "Deserialize Read");
         reader.read_exact(&mut next_byte[..])?;
+        drop(handle);
+        record_bytes_read(1);
         if next_byte[0] != b'[' {
             return Err(DeserializationError(format!(
                 "Unexpected opening character '{}'",
@@ -67,7 +69,11 @@ where
         'outer: loop {
             out.push(T::streaming_deserialize(reader)?);
             loop {
+                bench_block!(handle, "Deserialize Read");
                 reader.read_exact(&mut next_byte[..])?;
+                drop(handle);
+                record_bytes_read(1);
+
                 match next_byte[0] {
                     b',' => break,
                     b']' => break 'outer,
@@ -93,7 +99,10 @@ impl Deserializable for CoordPair {
         let mut lat1: Option<f64> = None;
         let mut lon1: Option<f64> = None;
         let mut buf = vec![];
-        reader.read_until(b'}', &mut buf)?;
+        bench_block!(handle, "Deserialize Read");
+        let read = reader.read_until(b'}', &mut buf)?;
+        drop(handle);
+        record_bytes_read(read);
         if buf[0] != b'{' {
             return Err(DeserializationError(format!(
                 "Unexpected opening character '{}'",

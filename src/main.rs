@@ -6,7 +6,6 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use haversine_calculator::{
-    bench_block,
     calc::naive_haversine,
     generate::CoordPairGen,
     metrics::Benchmark,
@@ -40,7 +39,6 @@ enum Commands {
 
 fn main() -> Result<(), io::Error> {
     let mut _benchmark = Benchmark::init();
-    bench_block!(setup_handle, "Initial Setup");
     let cli = Cli::parse();
     let path = PathBuf::from(cli.filename);
     match cli.command {
@@ -49,29 +47,22 @@ fn main() -> Result<(), io::Error> {
             seed,
             uniform,
         } => {
-            drop(setup_handle);
-            bench_block!(handle, "Generate Haversine Input");
             let rng = StdRng::seed_from_u64(seed);
             let mut coord_pair_generator = CoordPairGen::new(rng, !uniform, count);
             let file = File::create(path)?;
             let mut writer = BufWriter::new(file);
-            drop(handle);
             serialize(&mut coord_pair_generator, &mut writer)?;
         }
         Commands::Calculate {} => {
             let mut reader = BufReader::new(File::open(path)?);
             let mut running_sum = 0.0;
-            drop(setup_handle);
             let res: Vec<CoordPair> = deserialize(&mut reader).unwrap();
-            bench_block!(calc_handle, "Haversine Calculation");
             let len = res.len();
             for cp in res {
                 let res = naive_haversine(cp);
                 running_sum += res;
             }
             let result = running_sum / len as f64;
-            drop(calc_handle);
-            bench_block!("Output");
             println!("The avg is: {}", result);
         }
     }
