@@ -109,30 +109,37 @@ impl Deserializable for CoordPair {
                 buf[0] as char
             )));
         }
-        bench_block!(handle, "Process UTF8");
 
-        let value = std::str::from_utf8(&buf[1..buf.len() - 1])
-            .map_err(|_| DeserializationError("Only utf8 format supported".to_string()))?;
-        drop(handle);
-
-        for item in value.split(',') {
+        let mut buf_slice = &buf[1..buf.len() - 1];
+        while !buf_slice.is_empty() {
             bench_block!(handle, "Process Key Val Pair");
+            let next_colon = buf_slice.iter().position(|&b| b == b':').unwrap();
+            let key_slice = &buf_slice[0..next_colon];
+            buf_slice = &buf_slice[next_colon + 1..];
+            let next_comma = buf_slice
+                .iter()
+                .position(|&b| b == b',')
+                .unwrap_or(buf_slice.len());
+            let val_slice = &buf_slice[..next_comma];
+            drop(handle);
+            bench_block!(handle, "Process UTF8");
+            let key = unsafe { std::str::from_utf8_unchecked(key_slice).trim() };
+            let val_as_utf8 = unsafe { std::str::from_utf8_unchecked(val_slice).trim() };
+            drop(handle);
 
-            let mut key_val = item.split(':');
-            let key = key_val
-                .next()
-                .ok_or(DeserializationError("Unexpected format".to_owned()))?;
-            let val = key_val
-                .next()
-                .ok_or(DeserializationError("Unexpected format".to_owned()))?;
-
-            let val = val.trim().parse::<f64>().map_err(|_| {
-                DeserializationError(format!("Can't parse floating point value from {}", val))
+            bench_block!(handle, "Parse float");
+            let val = val_as_utf8.parse::<f64>().map_err(|_| {
+                DeserializationError("Can't parse floating point value".to_string())
             })?;
             drop(handle);
-            bench_block!(handle, "Match Key");
 
-            match key.trim() {
+            if next_comma == buf_slice.len() {
+                buf_slice = &buf_slice[next_comma..];
+            } else {
+                buf_slice = &buf_slice[next_comma + 1..];
+            }
+            bench_block!(handle, "Match Key");
+            match key {
                 "\"lat0\"" => lat0 = Some(val),
                 "\"lon0\"" => lon0 = Some(val),
                 "\"lat1\"" => lat1 = Some(val),
@@ -155,13 +162,17 @@ impl Deserializable for CoordPair {
 
 impl Serializable for CoordPair {
     fn streaming_serialize(&mut self, writer: &mut impl Write) -> Result<(), std::io::Error> {
-        writer.write_all(
-            format!(
-                "{{\"lat0\":{},\"lon0\":{},\"lat1\":{},\"lon1\":{}}}",
-                self.lat0, self.lon0, self.lat1, self.lon1
-            )
-            .as_bytes(),
-        )
+        let mut buf = ryu::Buffer::new();
+        writer.write_all(b"{\"lat0\":")?;
+        writer.write_all(buf.format(self.lat0).as_bytes())?;
+        writer.write_all(b",\"lon0\":")?;
+        writer.write_all(buf.format(self.lon0).as_bytes())?;
+        writer.write_all(b",\"lon1\":")?;
+        writer.write_all(buf.format(self.lon1).as_bytes())?;
+        writer.write_all(b",\"lat1\":")?;
+        writer.write_all(buf.format(self.lat1).as_bytes())?;
+
+        writer.write_all(b"}")
     }
 }
 
