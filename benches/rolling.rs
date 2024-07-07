@@ -44,8 +44,8 @@ fn main() -> Result<(), io::Error> {
 
     loop {
         let page_faults = get_page_fault_count(process);
-        bench_block!(handle, "Initial Setup");
         let mut _benchmark = Benchmark::init();
+        bench_block!(handle, "Initial Setup");
         let path = PathBuf::from("./input.json");
         let mut reader = BufReader::new(File::open(path)?);
         let mut running_sum = 0.0;
