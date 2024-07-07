@@ -1,21 +1,16 @@
 use std::{arch::x86_64::_rdtsc, collections::HashMap};
 
-#[cfg(feature = "bench")]
 static mut BENCHMARK_ANCHOR: BenchmarkAnchor = BenchmarkAnchor::new();
 
-#[cfg(feature = "bench")]
 static mut BYTE_COUNT: u64 = 0;
 
-#[cfg(feature = "bench")]
 static mut CHILD_CPU_SPEND: u64 = 0;
 
-#[cfg(feature = "bench")]
 struct BenchmarkAnchor {
     data: [(u64, u64, u64, &'static str); 1024],
     depth: usize,
 }
 
-#[cfg(feature = "bench")]
 impl BenchmarkAnchor {
     const fn new() -> Self {
         Self {
@@ -25,12 +20,10 @@ impl BenchmarkAnchor {
     }
 }
 
-#[cfg(feature = "bench")]
 pub struct Benchmark {
     start_os: std::time::Instant,
     start_cpu: u64,
 }
-#[cfg(feature = "bench")]
 impl Benchmark {
     pub fn init() -> Self {
         Self {
@@ -40,7 +33,6 @@ impl Benchmark {
     }
 }
 
-#[cfg(feature = "bench")]
 impl Drop for Benchmark {
     fn drop(&mut self) {
         let start_cpu = self.start_cpu;
@@ -99,12 +91,10 @@ pub fn read_cpu_timer() -> u64 {
     unsafe { _rdtsc() }
 }
 
-#[cfg(feature = "bench")]
 pub struct BenchmarkOnDrop {
     start: u64,
     slot: usize,
 }
-#[cfg(feature = "bench")]
 impl BenchmarkOnDrop {
     pub fn new(name: &'static str, slot: usize) -> Self {
         unsafe {
@@ -118,7 +108,6 @@ impl BenchmarkOnDrop {
         }
     }
 }
-#[cfg(feature = "bench")]
 impl Drop for BenchmarkOnDrop {
     fn drop(&mut self) {
         unsafe {
@@ -138,12 +127,9 @@ impl Drop for BenchmarkOnDrop {
     }
 }
 
-#[cfg(feature = "bench")]
 pub fn record_bytes(bytes: u64) {
     unsafe { BYTE_COUNT += bytes };
 }
-#[cfg(not(feature = "bench"))]
-pub fn record_bytes(_: u64) {}
 
 #[macro_export]
 macro_rules! bench_block {
@@ -153,30 +139,4 @@ macro_rules! bench_block {
     ($name:literal) => {
         let _bench_container = $crate::metrics::BenchmarkOnDrop::new($name, ::counter::counter!());
     };
-}
-
-// placeholders for when bench is disabled
-
-#[cfg(not(feature = "bench"))]
-pub struct Benchmark;
-
-#[cfg(not(feature = "bench"))]
-impl Benchmark {
-    pub fn init() -> Self {
-        Self
-    }
-}
-
-#[cfg(not(feature = "bench"))]
-pub struct BenchmarkOnDrop;
-
-#[cfg(not(feature = "bench"))]
-impl BenchmarkOnDrop {
-    pub fn new(_: &'static str, _: usize) -> Self {
-        Self
-    }
-}
-#[cfg(not(feature = "bench"))]
-impl Drop for BenchmarkOnDrop {
-    fn drop(&mut self) {}
 }

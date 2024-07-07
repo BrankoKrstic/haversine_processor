@@ -56,15 +56,15 @@ where
         let mut next_byte = [0u8; 1];
         bench_block!(handle, "Deserialize Read");
         reader.read_exact(&mut next_byte[..])?;
-        drop(handle);
         record_bytes(1);
+        drop(handle);
         if next_byte[0] != b'[' {
             return Err(DeserializationError(format!(
                 "Unexpected opening character '{}'",
                 next_byte[0] as char
             )));
         }
-        let mut out = vec![];
+        let mut out = Vec::new();
 
         'outer: loop {
             out.push(T::streaming_deserialize(reader)?);
@@ -87,10 +87,16 @@ where
                 }
             }
         }
+        unsafe {
+            println!("{} {}", MIN_SIZE, MAX_SIZE);
+        }
 
         Ok(out)
     }
 }
+
+static mut MIN_SIZE: usize = usize::MAX;
+static mut MAX_SIZE: usize = 0;
 
 impl Deserializable for CoordPair {
     fn streaming_deserialize(reader: &mut impl BufRead) -> Result<Self, DeserializationError> {
@@ -101,6 +107,14 @@ impl Deserializable for CoordPair {
         let mut buf = vec![];
         bench_block!(handle, "Deserialize Read");
         let read = reader.read_until(b'}', &mut buf)?;
+        unsafe {
+            if read < MIN_SIZE {
+                MIN_SIZE = read;
+            }
+            if read > MAX_SIZE {
+                MAX_SIZE = read;
+            }
+        }
         record_bytes(read as u64);
         drop(handle);
         if buf[0] != b'{' {
@@ -144,9 +158,7 @@ impl Deserializable for CoordPair {
                 "\"lon0\"" => lon0 = Some(val),
                 "\"lat1\"" => lat1 = Some(val),
                 "\"lon1\"" => lon1 = Some(val),
-                _ => {
-                    println!("{}", key);
-                }
+                _ => {}
             }
             drop(handle);
         }
