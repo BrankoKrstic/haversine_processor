@@ -34,6 +34,46 @@ where
     fn streaming_deserialize(reader: &mut impl BufRead) -> Result<Self, DeserializationError>;
 }
 
+pub fn deserialize_single_pass(mut s: &str) -> Result<Vec<CoordPair>, DeserializationError> {
+    if &s[..2] != "[{" || &s[s.len() - 2..] != "}]" {
+        return Err(DeserializationError(
+            "Unexpected opening character".to_string(),
+        ));
+    }
+    s = &s[2..s.len() - 2];
+    let mut out = Vec::with_capacity(s.len() / 100);
+    for item in s.split("},{") {
+        let mut lat0: Option<f64> = None;
+        let mut lon0: Option<f64> = None;
+        let mut lat1: Option<f64> = None;
+        let mut lon1: Option<f64> = None;
+        for item in item.split(',') {
+            let (key, val) = item
+                .split_once(':')
+                .ok_or(DeserializationError("Invalid json".to_string()))?;
+            let val = val.parse::<f64>().map_err(|_| {
+                DeserializationError("Can't parse floating point value".to_string())
+            })?;
+            match key {
+                "\"lat0\"" => lat0 = Some(val),
+                "\"lon0\"" => lon0 = Some(val),
+                "\"lat1\"" => lat1 = Some(val),
+                "\"lon1\"" => lon1 = Some(val),
+                _ => {}
+            }
+        }
+
+        let cp = CoordPair {
+            lat0: lat0.ok_or_else(|| DeserializationError("member lat0 missing".to_owned()))?,
+            lon0: lon0.ok_or_else(|| DeserializationError("member lon0 missing".to_owned()))?,
+            lat1: lat1.ok_or_else(|| DeserializationError("member lat1 missing".to_owned()))?,
+            lon1: lon1.ok_or_else(|| DeserializationError("member lon1 missing".to_owned()))?,
+        };
+        out.push(cp);
+    }
+    Ok(out)
+}
+
 pub fn deserialize<D: Deserializable>(
     reader: &mut impl BufRead,
 ) -> Result<D, DeserializationError> {

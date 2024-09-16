@@ -17,3 +17,7 @@ harness = false
 [[bench]]
 name = "v_alloc"
 harness = false
+
+[[bench]]
+name = "single_pass"
+harness = false

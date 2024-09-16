@@ -49,7 +49,9 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
 
     let page_size = 4096usize;
+    println!("{:?}", args);
     let page_count: usize = args[1].parse().unwrap();
+    println!("{} {}", args[1], page_count);
     let total: usize = page_size * page_count;
     let mut _benchmark = Benchmark::init();
     bench_block!(handle, "Initial Setup");
@@ -59,6 +61,7 @@ fn main() {
         let data = unsafe {
             VirtualAlloc(None, total, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE) as *mut u8
         };
+        println!("{:?} {}", data, touch_size);
         if !data.is_null() {
             let faults_start = get_page_fault_count(process);
             let mut first_touched: *mut u8 = std::ptr::null_mut();

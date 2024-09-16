@@ -1,0 +1,158 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'haversine_calculator'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=haversine_calculator"
+        ],
+        "filter": {
+          "name": "haversine_calculator",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'hav'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=hav",
+          "--package=haversine_calculator"
+        ],
+        "filter": {
+          "name": "hav",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'hav'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=hav",
+          "--package=haversine_calculator"
+        ],
+        "filter": {
+          "name": "hav",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'lp'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=lp",
+          "--package=haversine_calculator"
+        ],
+        "filter": {
+          "name": "lp",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'lp'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=lp",
+          "--package=haversine_calculator"
+        ],
+        "filter": {
+          "name": "lp",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug benchmark 'rolling'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bench=rolling",
+          "--package=haversine_calculator"
+        ],
+        "filter": {
+          "name": "rolling",
+          "kind": "bench"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug benchmark 'single_pass'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bench=single_pass",
+          "--package=haversine_calculator"
+        ],
+        "filter": {
+          "name": "single_pass",
+          "kind": "bench"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug benchmark 'v_alloc'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bench=v_alloc",
+          "--package=haversine_calculator"
+        ],
+        "filter": {
+          "name": "v_alloc",
+          "kind": "bench"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
