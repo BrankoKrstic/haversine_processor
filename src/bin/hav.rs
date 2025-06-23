@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{self, BufReader, BufWriter},
+    io::{self, BufReader, BufWriter, Write},
     path::PathBuf,
 };
 
@@ -54,12 +54,21 @@ fn main() -> Result<(), io::Error> {
         Commands::Calculate {} => {
             let mut reader = BufReader::new(File::open(path)?);
             let mut running_sum = 0.0;
+            let mut running_answers = vec![];
             let res: Vec<CoordPair> = deserialize(&mut reader).unwrap();
             let len = res.len();
             for cp in res {
                 let res = naive_haversine(cp);
+                running_answers.push(res);
                 running_sum += res;
             }
+            running_answers.push(running_sum / len as f64);
+            let file = File::create("answers.f64")?;
+            let mut writer: BufWriter<File> = BufWriter::new(file);
+            for item in running_answers {
+                writer.write_all(&item.to_le_bytes())?;
+            }
+            writer.flush()?;
             let result = running_sum / len as f64;
             println!("The avg is: {}", result);
         }

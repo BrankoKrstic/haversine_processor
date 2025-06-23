@@ -138,6 +138,29 @@ where
 static mut MIN_SIZE: usize = usize::MAX;
 static mut MAX_SIZE: usize = 0;
 
+impl<T: Serializable> Serializable for Vec<T> {
+    fn streaming_serialize(&mut self, writer: &mut impl Write) -> Result<(), std::io::Error> {
+        writer.write_all(b"[")?;
+
+        for (i, item) in self.iter_mut().enumerate() {
+            if i != 0 {
+                writer.write_all(b",")?;
+            }
+            item.streaming_serialize(writer)?;
+        }
+        writer.write_all(b"]")?;
+        Ok(())
+    }
+}
+
+impl Serializable for f64 {
+    fn streaming_serialize(&mut self, writer: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut buf = ryu::Buffer::new();
+        writer.write_all(buf.format(*self).as_bytes())?;
+        Ok(())
+    }
+}
+
 impl Deserializable for CoordPair {
     fn streaming_deserialize(reader: &mut impl BufRead) -> Result<Self, DeserializationError> {
         let mut lat0: Option<f64> = None;

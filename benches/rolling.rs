@@ -50,6 +50,7 @@ fn main() -> Result<(), io::Error> {
         let mut reader = BufReader::new(File::open(path)?);
         let mut running_sum = 0.0;
         drop(handle);
+
         let res: Vec<CoordPair> = deserialize(&mut reader).unwrap();
         let len = res.len();
         bench_block!(process_handle, "Process Haversine");

@@ -15,11 +15,7 @@ BITS 64
 ;  LISTING 132
 ;  ========================================================================
 
-global Write1
-global Write2
-global Write3
-global Write4
-global Write5
+global Read1
 
 section .text
 
@@ -32,55 +28,14 @@ section .text
 ; to match the ABI.
 ;
 
-Write1:
+Read1:
+    mov r8, 0
     align 64
 .loop:
-    mov [rdx], rax 
-    sub rcx, 1
-    jnle .loop
+    vmovdqu ymm0, [rdx + r8]
+    vmovdqu ymm0, [rdx + r8 + 32]
+
+    add r8, 64
+    cmp rcx, r8
+    ja .loop
     ret
-
-Write2:
-    align 64
-.loop:
-    mov [rdx], rax 
-    mov [rdx], rax 
-    sub rcx, 2
-    jnle .loop
-    ret
-
-Write3:
-    align 64
-.loop:
-    mov [rdx], rax 
-    mov [rdx], rax 
-    mov [rdx], rax 
-    sub rcx, 3
-    jnle .loop
-    ret
-
-Write4:
-    align 64
-.loop:
-    mov [rdx], rax 
-    mov [rdx], rax 
-    mov [rdx], rax 
-    mov [rdx], rax 
-    sub rcx, 4
-    jnle .loop
-    ret
-
-
-
-Write5:
-    align 64
-.loop:
-    mov [rdx], rax 
-    mov [rdx], rax 
-    mov [rdx], rax 
-    mov [rdx], rax 
-    mov [rdx], rax 
-    sub rcx, 5
-    jnle .loop
-    ret
-
